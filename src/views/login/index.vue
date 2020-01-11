@@ -39,7 +39,7 @@
           <van-count-down
             v-if="isCountDownShow"
             slot="button"
-            :time="1000 * 6"
+            :time="1000 * 60"
             format="ss s"
             @finish="isCountDownShow = false"
           />
@@ -47,7 +47,7 @@
             v-else
             slot="button"
             size="small"
-            type="info"
+            type="primary"
             round
             @click="onSendSmsCode"
           >发送验证码</van-button>
@@ -73,8 +73,8 @@ export default {
   data () {
     return {
       user: {
-        mobile: '13911111111', // 手机号
-        code: '246810' // 验证码
+        mobile: '', // 手机号
+        code: '' // 验证码
       },
       isCountDownShow: false // 是否显示倒计时
     }
@@ -128,6 +128,9 @@ export default {
 
         // 提示成功
         this.$toast.success('登录成功')
+
+        // 跳转到首页
+        this.$router.push('/')
       } catch (err) {
         console.log('登录失败', err)
         this.$toast.fail('登录失败，手机号或验证码不正确')
@@ -163,16 +166,15 @@ export default {
     }
   }
 }
-
 </script>
 
 <style scoped lang="less">
 .login-container {
   .login-btn-wrap {
-    padding: 55px 30px;
+    padding: 27px 16px;
     .van-button {
       width: 100%;
-      background: #5da9dd;
+      background: #6db4fb;
     }
   }
   .van-cell {

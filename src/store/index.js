@@ -9,12 +9,10 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { getItem, setItem } from '@/utils/storage'
-import { Tabbar, TabbarItem } from 'vant'
 
 const USER_KEY = 'user'
 
 Vue.use(Vuex)
-Vue.use(Tabbar).use(TabbarItem)
 
 export default new Vuex.Store({
   state: {
