@@ -18,7 +18,10 @@ import {
   Dialog,
   List,
   Tab,
-  Tabs
+  Tabs,
+  PullRefresh,
+  Popup,
+  Search
 } from 'vant'
 
 // 注册
@@ -39,3 +42,6 @@ Vue.use(Button)
   .use(List)
   .use(Tab)
   .use(Tabs)
+  .use(PullRefresh)
+  .use(Popup)
+  .use(Search)
