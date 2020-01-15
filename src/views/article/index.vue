@@ -33,12 +33,26 @@
           />
           <div class="text">
             <p class="name">{{ article.aut_name }}</p>
-            <p class="time">{{ article.pubdate }}</p>
+            <p class="time">{{ article.pubdate | relativeTime }}</p>
           </div>
         </div>
-        <van-button class="follow-btn" type="info" size="small" round>+ 关注</van-button>
+        <van-button
+          v-if="!user || article.aut_id !== user.id"
+          class="follow-btn"
+          :type="article.is_followed ? 'default' : 'info'"
+          size="small"
+          round
+          :loading="isFollowLoading"
+          @click="onFollow"
+        >{{ article.is_followed ? '已关注' : '+ 关注' }}</van-button>
       </div>
+      <!-- 文章内容 -->
       <div class="markdown-body" v-html="article.content"></div>
+      <!-- /文章内容 -->
+
+      <!-- 文章评论 -->
+      <article-comment :article-id="articleId" />
+      <!-- /文章评论 -->
     </div>
     <!-- /文章详情 -->
 
@@ -57,12 +71,13 @@
 
     <!-- 底部区域 -->
     <div class="footer">
-      <van-button
-        class="write-btn"
-        type="default"
-        round
-        size="small"
-      >写评论</van-button>
+    <van-button
+      class="write-btn"
+      type="default"
+      round
+      size="small"
+      @click="isPostShow = true"
+    >写评论</van-button>
       <van-icon
         class="comment-icon"
         name="comment-o"
@@ -75,11 +90,21 @@
       />
       <van-icon
         color="#e5645f"
-        name="good-job"
+        :name="article.attitude === 1 ? 'good-job' : 'good-job-o'"
+        @click="onLike"
       />
       <van-icon class="share-icon" name="share" />
     </div>
     <!-- /底部区域 -->
+
+    <!-- 发布文章评论 -->
+    <van-popup
+      v-model="isPostShow"
+      position="bottom"
+    >
+      <post-comment />
+    </van-popup>
+    <!-- /发布文章评论 -->
   </div>
 </template>
 
@@ -87,12 +112,26 @@
 import {
   getArticleById,
   addCollect,
-  deleteCollect
+  deleteCollect,
+  addLike,
+  deleteLike
 } from '@/api/article'
+import { addFollow, deleteFollow } from '@/api/user'
+import ArticleComment from './components/article-comment'
+import PostComment from './components/post-comment'
+
+// vuex 模块提供了一些辅助方法，专门用来让我们更方便的获取容器中的数据
+// mapState：映射获取 state 数据
+// mapMutation：映射获取 mutation 数据
+// maoAction：映射获取 action 数据
+import { mapState } from 'vuex'
 
 export default {
   name: 'ArticlePage',
-  components: {},
+  components: {
+    ArticleComment,
+    PostComment
+  },
   props: {
     articleId: {
       type: String,
@@ -102,10 +141,24 @@ export default {
   data () {
     return {
       article: {}, // 文章详情
-      loading: true // 文章加载中的 loading 状态
+      loading: true, // 文章加载中的 loading 状态
+      isFollowLoading: false, // 关注按钮的 loading 状态
+      isPostShow: false // 发布评论的弹层显示状态
     }
   },
-  computed: {},
+  computed: {
+    // mapState 方法返回一个对象，对象中就是映射过来的容器中的数据成员
+    // ... 操作符就是把一个对象展开，混入当前对象中
+    ...mapState(['user'])
+  },
+  // this.user、this.a、this.b
+  // computed: mapState(['user', 'a', 'b']),
+  // computed: {
+  //   // 优化获取容器中的数据（方式一）：this.user
+  //   // user () {
+  //   //   return this.$store.state.user
+  //   // }
+  // },
   watch: {},
   created () {
     this.loadArticle()
@@ -146,6 +199,50 @@ export default {
         console.log(err)
         this.$toast.fail('操作失败')
       }
+    },
+
+    async onLike () {
+      this.$toast.loading({
+        duration: 0, // 持续展示 toast
+        message: '操作中...',
+        forbidClick: true // 是否禁止背景点击
+      })
+
+      try {
+        // 如果已赞，则取消点赞
+        if (this.article.attitude === 1) {
+          await deleteLike(this.articleId)
+          this.article.attitude = -1
+          this.$toast.success('取消点赞')
+        } else {
+          // 点赞
+          await addLike(this.articleId)
+          this.article.attitude = 1
+          this.$toast.success('点赞成功')
+        }
+      } catch (err) {
+        console.log(err)
+        this.$toast.fail('操作失败')
+      }
+    },
+
+    async onFollow () {
+      this.isFollowLoading = true
+      try {
+        const authorId = this.article.aut_id
+        // 如果已关注，则取消关注
+        if (this.article.is_followed) {
+          await deleteFollow(authorId)
+        } else {
+          // 添加关注
+          await addFollow(authorId)
+        }
+        this.article.is_followed = !this.article.is_followed
+      } catch (err) {
+        console.log(err)
+        this.$toast.fail('操作失败')
+      }
+      this.isFollowLoading = false
     }
   }
 }
